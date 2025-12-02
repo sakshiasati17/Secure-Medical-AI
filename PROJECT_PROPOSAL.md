@@ -1,4 +1,4 @@
-# Secure Medical Notes AI - Project Proposal
+# Secure Medical AI - Project Proposal
 
 **Data Center Scale Computing - Final Project**
 
@@ -12,7 +12,7 @@
 
 ## 1. Project Title
 
-**Secure Medical Notes AI: HIPAA-Compliant Medical Documentation System with AI-Powered Analytics**
+**Secure Medical AI: HIPAA-Compliant Medical Documentation System with AI-Powered Analytics**
 
 ---
 
@@ -653,17 +653,67 @@ This is not a joyless checkbox exercise—it's a system we're proud to build and
 
 ---
 
-## 10. Conclusion
+## 10. Deployment Status
 
-**Secure Medical Notes AI** represents a comprehensive, cloud-native system that solves real problems in healthcare documentation. By combining modern web frameworks, distributed systems architecture, and cutting-edge AI technologies, we have built a HIPAA-compliant platform that:
+**✅ Successfully Deployed on Google Cloud Platform (GCP)**
+
+### Production Infrastructure
+- **Frontend**: Deployed on Cloud Run
+  - URL: https://mednotes-frontend-957293469884.us-central1.run.app
+  - Container: React + Nginx
+  - Auto-scaling enabled
+
+- **Backend API**: Deployed on Cloud Run
+  - URL: https://mednotes-backend-957293469884.us-central1.run.app
+  - Container: FastAPI + Uvicorn
+  - API Docs: https://mednotes-backend-957293469884.us-central1.run.app/docs
+
+- **Database**: Cloud SQL PostgreSQL
+  - Instance: mednotes-db
+  - Region: us-central1
+  - Seeded with demo data (6 users, 5 patients, 73 notes)
+
+- **Cache/Queue**: Memorystore Redis
+  - Instance: mednotes-redis
+  - Used for session management and task queuing
+
+- **Secrets Management**: Google Secret Manager
+  - Database connection strings
+  - API keys (OpenAI, JWT)
+  - Secure credential storage
+
+- **Background Tasks**: Cloud Tasks
+  - Async AI processing
+  - Batch operations
+
+### Deployment Features
+- ✅ HTTPS/SSL enabled
+- ✅ Auto-scaling configured
+- ✅ Health checks implemented
+- ✅ Environment-based configuration
+- ✅ CI/CD with Cloud Build
+- ✅ Monitoring and logging
+
+### Access
+- **Live Application**: https://mednotes-frontend-957293469884.us-central1.run.app
+- **Demo Credentials**: See LOGIN_CREDENTIALS.txt
+- **API Documentation**: Available at /docs endpoint
+
+---
+
+## 11. Conclusion
+
+**Secure Medical AI** represents a comprehensive, cloud-native system that solves real problems in healthcare documentation. By combining modern web frameworks, distributed systems architecture, and cutting-edge AI technologies, we have built a HIPAA-compliant platform that:
 
 - **Saves Time**: Reduces documentation burden by 40-50%
 - **Improves Safety**: Identifies high-risk patients proactively
 - **Ensures Compliance**: Maintains audit trails and data encryption
-- **Scales Effectively**: Designed for cloud deployment with horizontal scaling
+- **Scales Effectively**: Successfully deployed on Google Cloud Platform with horizontal scaling
 - **Demonstrates Expertise**: Showcases full-stack development, AI integration, and distributed systems design
 
-We believe this project exceeds the requirements for Data Center Scale Computing while remaining achievable for our two-person team. Our iterative development approach, clear architecture, and comprehensive testing strategy position us for successful delivery and potential real-world deployment.
+**Project Status**: ✅ **Production-Ready and Deployed**
+
+We have successfully delivered a production-ready system that exceeds the requirements for Data Center Scale Computing. Our iterative development approach, clear architecture, and comprehensive deployment strategy have resulted in a fully functional, cloud-deployed application ready for real-world use.
 
 ---
 
@@ -671,7 +721,7 @@ We believe this project exceeds the requirements for Data Center Scale Computing
 - Sakshi Asati - [sakshi.asati@example.edu]
 - Sukriti Sehgal - [sukriti.sehgal@example.edu]
 
-**GitHub Repository:** https://github.com/sakshiasati17/secure-med-notes-ai
+**GitHub Repository:** https://github.com/sukritisehgal-28/Secure-Medical-AI
 
 **Demo Video:** [To be added]
 

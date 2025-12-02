@@ -9,8 +9,8 @@ from pydantic import BaseModel
 from api.db.database import get_db
 from api.models.note import Note
 from api.models.patient import Patient
-from api.agents.summarization_agent import summarize_note
-from api.agents.risk_agent import assess_patient_risk
+from api.agents.summarization_agent import SummarizationAgent
+from api.agents.risk_agent import RiskAssessmentAgent
 
 router = APIRouter(prefix="/ai/tasks", tags=["background-tasks"])
 
@@ -34,14 +34,16 @@ async def process_summarization_task(
         raise HTTPException(status_code=404, detail="Note not found")
     
     try:
-        # Perform AI summarization
-        result = summarize_note(note.content)
+        # Get patient for context
+        patient = db.query(Patient).filter(Patient.id == note.patient_id).first()
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found")
         
-        # Update note with results
-        note.summary = result.get("summary")
-        note.risk_level = result.get("risk_level")
-        note.recommendations = result.get("recommendations")
+        # Perform AI summarization using agent
+        agent = SummarizationAgent()
+        result = agent.process_note(note, patient, db)
         
+        # Results are already saved in process_note, just commit
         db.commit()
         
         return {
@@ -68,18 +70,19 @@ async def process_risk_assessment_task(
         raise HTTPException(status_code=404, detail="Patient not found")
     
     try:
-        # Get patient's notes
-        notes = db.query(Note).filter(Note.patient_id == patient.id).all()
+        # Perform risk assessment using agent
+        agent = RiskAssessmentAgent()
+        risk_report = agent.generate_patient_risk_report(patient.id, db)
         
-        # Perform risk assessment
-        risk_data = assess_patient_risk(patient, notes)
+        if "error" in risk_report:
+            raise HTTPException(status_code=404, detail=risk_report["error"])
         
         return {
             "status": "success",
             "patient_id": patient.id,
-            "risk_level": risk_data.get("risk_level"),
-            "risk_factors": risk_data.get("risk_factors"),
-            "recommendations": risk_data.get("recommendations")
+            "risk_level": risk_report.get("risk_level"),
+            "risk_factors": risk_report.get("risk_factors", []),
+            "recommendations": risk_report.get("recommendations", [])
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

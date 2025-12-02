@@ -1,4 +1,4 @@
-# 🏥 Secure Medical Notes AI
+# 🏥 Secure Medical AI
 
 **AI-Powered Clinical Documentation Platform for Healthcare Excellence**
 
@@ -325,12 +325,12 @@ A secure, full-stack medical documentation platform that empowers healthcare tea
 
 ```bash
 # Clone the repository
-git clone https://github.com/sakshiasati17/secure-med-notes-ai.git
-cd secure-med-notes-ai
+git clone https://github.com/sukritisehgal-28/Secure-Medical-AI.git
+cd Secure-Medical-AI
 
 # Run the automated React startup script
-chmod +x start_react.sh
-./start_react.sh
+chmod +x scripts/setup/start_react.sh
+./scripts/setup/start_react.sh
 
 # The script will:
 # ✅ Start PostgreSQL and Redis (Docker)
@@ -343,8 +343,8 @@ chmod +x start_react.sh
 
 #### 1. Clone Repository
 ```bash
-git clone https://github.com/sakshiasati17/secure-med-notes-ai.git
-cd secure-med-notes-ai
+git clone https://github.com/sukritisehgal-28/Secure-Medical-AI.git
+cd Secure-Medical-AI
 ```
 
 #### 2. Configure Environment
@@ -415,77 +415,72 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-secure-med-notes-ai/
-├── frontend/                     # React Frontend (Port 3000)
+Secure-Medical-AI/
+├── 📁 api/                        # FastAPI Backend (Port 8000)
+│   ├── agents/                   # AI agents
+│   │   ├── summarization_agent.py
+│   │   └── risk_agent.py
+│   ├── db/                       # Database configuration
+│   ├── models/                   # SQLAlchemy models
+│   ├── routes/                   # API endpoints
+│   ├── schemas/                  # Pydantic validation
+│   ├── services/                 # Business logic
+│   ├── tasks/                    # Background tasks
+│   ├── main.py                   # FastAPI app entry
+│   └── seed_more_data.py         # Database seeding
+│
+├── 📁 frontend/                   # React Frontend (Port 3000)
 │   ├── src/
 │   │   ├── components/           # React components
-│   │   │   ├── DoctorDashboard.tsx      # Doctor workspace
-│   │   │   ├── NurseDashboard.tsx       # Nurse workspace
-│   │   │   ├── PatientsTab.tsx          # Patient management
-│   │   │   ├── ClinicalNotesTab.tsx     # Note creation
-│   │   │   ├── CalendarTab.tsx          # Scheduling
-│   │   │   ├── Login.tsx                # Authentication
-│   │   │   └── ui/                      # 48 Radix UI components
+│   │   │   ├── DoctorDashboard.tsx
+│   │   │   ├── NurseDashboard.tsx
+│   │   │   ├── Login.tsx
+│   │   │   ├── PatientsTab.tsx
+│   │   │   ├── ClinicalNotesTab.tsx
+│   │   │   ├── CalendarTab.tsx
+│   │   │   ├── AIAnalyticsTab.tsx
+│   │   │   └── ui/               # 48 Radix UI components
 │   │   ├── services/
-│   │   │   └── api.ts            # API client with JWT
-│   │   ├── App.tsx               # Main app routing
-│   │   ├── main.tsx              # Entry point
-│   │   └── index.css             # Tailwind styles
-│   ├── package.json              # Node dependencies
-│   ├── vite.config.ts            # Vite configuration
-│   ├── README.md                 # Frontend documentation
-│   └── FEATURES.md               # Feature inventory
+│   │   │   └── api.ts            # API client
+│   │   └── App.tsx                # Main app
+│   ├── package.json
+│   └── vite.config.ts
 │
-├── api/                          # FastAPI Backend (Port 8000)
-│   ├── agents/                   # AI agents
-│   │   ├── summarization_agent.py       # Note summarization
-│   │   └── risk_agent.py                # Risk assessment
-│   ├── db/
-│   │   └── database.py           # Database connection
-│   ├── models/                   # SQLAlchemy models
-│   │   ├── user.py               # User model
-│   │   ├── patient.py            # Patient model
-│   │   ├── note.py               # Note model
-│   │   ├── appointment.py        # Appointment model
-│   │   └── audit.py              # Audit log model
-│   ├── routes/                   # API endpoints
-│   │   ├── auth.py               # /auth/login, /auth/signup
-│   │   ├── patients.py           # /patients/*
-│   │   ├── notes.py              # /notes/*
-│   │   ├── ai.py                 # /ai/*
-│   │   └── appointments.py       # /appointments/*
-│   ├── schemas/                  # Pydantic schemas
-│   │   ├── user.py               # User validation
-│   │   ├── patient.py            # Patient validation
-│   │   └── note.py               # Note validation
-│   ├── services/                 # Business logic
-│   │   ├── ai_service.py         # OpenAI integration
-│   │   └── auth_service.py       # JWT & passwords
-│   ├── deps.py                   # FastAPI dependencies
-│   ├── main.py                   # FastAPI app
-│   └── seed_more_data.py         # Sample data (60+ notes)
-│
-├── docs/                         # Documentation
+├── 📁 docs/                       # Documentation
+│   ├── deployment/               # Deployment guides
 │   ├── features/                 # Feature docs
-│   └── guides/                   # Technical guides
+│   ├── guides/                   # Technical guides
+│   ├── status/                   # Status reports
+│   └── README.md                 # Docs index
 │
-├── infra/                        # Infrastructure
-│   ├── Dockerfile.api            # API container
-│   └── nginx.conf                # Nginx config
+├── 📁 scripts/                    # Utility scripts
+│   ├── setup/                    # Setup scripts
+│   │   ├── start_api.sh
+│   │   ├── start_react.sh
+│   │   └── COMPLETE_SETUP.sh
+│   └── deployment/               # Deployment scripts
+│       ├── deploy-gcp.sh
+│       └── setup-cloud-tasks.sh
 │
-├── data/                         # Data files
-│   └── policies/
-│       └── hipaa.md              # HIPAA compliance policy
+├── 📁 infra/                      # Infrastructure configs
+│   └── Dockerfile.*
 │
-├── docker-compose.yml            # PostgreSQL + Redis services
-├── requirements.txt              # Python dependencies
-├── .env                          # Environment variables
-├── start_react.sh                # Quick start script
-├── README.md                     # This file
-├── ARCHITECTURE.md               # Detailed architecture docs
-├── PROJECT_PROPOSAL.md           # Project overview and proposal
-└── PROJECT_STRUCTURE.md          # Project structure documentation
+├── 📁 data/                       # Data files
+│   └── policies/hipaa.md
+│
+├── 📄 README.md                   # Main documentation
+├── 📄 ARCHITECTURE.md             # System architecture
+├── 📄 PROJECT_PROPOSAL.md         # Project proposal
+├── 📄 PROJECT_STRUCTURE.md        # Structure details
+├── 📄 LOGIN_CREDENTIALS.txt       # Demo credentials
+│
+├── 🐳 docker-compose.yml         # Local development
+├── 🐳 Dockerfile.*                # Container configs
+├── ⚙️ requirements.txt            # Python dependencies
+└── ⚙️ cloudbuild-*.yaml          # GCP build configs
 ```
+
+**For detailed structure, see [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)**
 
 ---
 
@@ -785,6 +780,7 @@ This project is for educational purposes. See `LICENSE` file for details.
 
 Team Members:
 - **Sakshi Asati** - [GitHub](https://github.com/sakshiasati17)
+- **Sukriti Sehgal** - [GitHub](https://github.com/sukritisehgal-28)
 - **Sukriti Sehgal**
 
 ---
@@ -806,6 +802,7 @@ Team Members:
 - 📖 [ARCHITECTURE.md](ARCHITECTURE.md) - Complete system architecture
 - 📋 [PROJECT_PROPOSAL.md](PROJECT_PROPOSAL.md) - Project overview and proposal
 - 📁 [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) - Project structure documentation
+- 📚 [docs/README.md](docs/README.md) - Documentation index
 - 📝 [frontend/README.md](frontend/README.md) - Frontend documentation
 - 🎯 [frontend/FEATURES.md](frontend/FEATURES.md) - Feature inventory
 
@@ -814,8 +811,8 @@ Team Members:
 - 📚 ReDoc: http://localhost:8000/redoc
 
 ### Issues & Support
-- 🐛 Report bugs: [GitHub Issues](https://github.com/sakshiasati17/secure-med-notes-ai/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/sakshiasati17/secure-med-notes-ai/discussions)
+- 🐛 Report bugs: [GitHub Issues](https://github.com/sukritisehgal-28/Secure-Medical-AI/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/sukritisehgal-28/Secure-Medical-AI/discussions)
 
 ---
 
@@ -880,12 +877,26 @@ Team Members:
 
 ## 🚦 Current Status
 
-**Production Ready**: ✅ Core features functional
-**Frontend**: ✅ Modern React UI with TypeScript
-**Backend**: ✅ FastAPI with AI integration
-**Database**: ✅ PostgreSQL with seeded data
-**Authentication**: ✅ JWT-based auth with RBAC
-**AI Features**: ✅ Summarization & risk assessment
+**Production Ready**: ✅ **Deployed on Google Cloud Platform**
+- **Frontend**: ✅ Deployed on Cloud Run
+- **Backend**: ✅ Deployed on Cloud Run
+- **Database**: ✅ Cloud SQL PostgreSQL with seeded data
+- **Redis**: ✅ Memorystore deployed
+- **Authentication**: ✅ JWT-based auth with RBAC
+- **AI Features**: ✅ Summarization & risk assessment
+- **Sign-up**: ✅ User registration functional
+
+### 🌐 Live Application
+- **Frontend URL**: https://mednotes-frontend-957293469884.us-central1.run.app
+- **Backend API**: https://mednotes-backend-957293469884.us-central1.run.app
+- **API Documentation**: https://mednotes-backend-957293469884.us-central1.run.app/docs
+
+### 📊 Deployment Status
+- ✅ All core features functional
+- ✅ Modern React UI with TypeScript
+- ✅ FastAPI with AI integration
+- ✅ HIPAA-compliant architecture
+- ✅ Production-ready and scalable
 
 ---
 

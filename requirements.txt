@@ -24,4 +24,8 @@ weasyprint
 sendgrid
 twilio
 google-cloud-tasks
+pytest>=7.4.0
+pytest-cov>=4.1.0
+httpx>=0.24.0
+locust>=2.17.0
 
