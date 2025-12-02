@@ -118,7 +118,6 @@ export function ClinicalNotesTab({ darkMode }: ClinicalNotesTabProps) {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
       setNotes(sortedData);
-      console.log('Fetched notes:', sortedData); // Debug log
     } catch (error: any) {
       console.error('Failed to fetch notes:', error);
       const errorMessage = error?.message || 'Failed to load notes';

@@ -5,9 +5,9 @@ This directory contains all project documentation organized by category.
 ## 📖 Core Documentation
 
 - **[README.md](../README.md)** - Main project overview and quick start guide
-- **[ARCHITECTURE.md](../ARCHITECTURE.md)** - Complete system architecture documentation
-- **[PROJECT_STRUCTURE.md](../PROJECT_STRUCTURE.md)** - Project structure and organization
-- **[PROJECT_PROPOSAL.md](../PROJECT_PROPOSAL.md)** - Original project proposal
+- **[project/ARCHITECTURE.md](project/ARCHITECTURE.md)** - Complete system architecture documentation
+- **[project/PROJECT_PROPOSAL.md](project/PROJECT_PROPOSAL.md)** - Original project proposal
+- **[project/PROJECT_REPORT.md](project/PROJECT_REPORT.md)** - Project report
 
 ## 🚀 Deployment Guides
 
@@ -36,7 +36,7 @@ Located in `guides/`:
 
 ## 🔐 Credentials
 
-- **[LOGIN_CREDENTIALS.txt](../LOGIN_CREDENTIALS.txt)** - Demo user credentials (keep secure)
+- **[LOGIN_CREDENTIALS.txt](LOGIN_CREDENTIALS.txt)** - Demo user credentials (keep secure)
 
 ---
 

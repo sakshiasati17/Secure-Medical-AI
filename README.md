@@ -97,7 +97,7 @@ A secure, full-stack medical documentation platform that empowers healthcare tea
 
 ## 🏗️ Architecture
 
-**For detailed architecture documentation, see [ARCHITECTURE.md](ARCHITECTURE.md)**
+**For detailed architecture documentation, see [docs/project/ARCHITECTURE.md](docs/project/ARCHITECTURE.md)**
 
 ### High-Level System Architecture
 
@@ -408,7 +408,7 @@ npm run dev
 | 👨‍⚕️ Doctor | dr.williams@hospital.com | password123 |
 | 👩‍⚕️ Nurse | nurse.davis@hospital.com | password123 |
 
-*Note: These are the seeded demo accounts. See [LOGIN_CREDENTIALS.txt](LOGIN_CREDENTIALS.txt) for all demo users.*
+*Note: These are the seeded demo accounts. See [docs/LOGIN_CREDENTIALS.txt](docs/LOGIN_CREDENTIALS.txt) for all demo users.*
 
 ---
 
@@ -469,13 +469,20 @@ Secure-Medical-AI/
 │   └── policies/hipaa.md
 │
 ├── 📄 README.md                   # Main documentation
-├── 📄 ARCHITECTURE.md             # System architecture
-├── 📄 PROJECT_PROPOSAL.md         # Project proposal
-├── 📄 PROJECT_STRUCTURE.md        # Structure details
-├── 📄 LOGIN_CREDENTIALS.txt       # Demo credentials
+├── 📁 docs/
+│   ├── project/                   # Project documentation
+│   │   ├── ARCHITECTURE.md        # System architecture
+│   │   ├── PROJECT_PROPOSAL.md    # Project proposal
+│   │   └── PROJECT_REPORT.md      # Project report
+│   └── LOGIN_CREDENTIALS.txt      # Demo credentials
 │
-├── 🐳 docker-compose.yml         # Local development
-├── 🐳 Dockerfile.*                # Container configs
+├── 📁 config/                     # Configuration files
+│   ├── docker-compose.yml         # Local development
+│   ├── Dockerfile.backend         # Backend container
+│   ├── Dockerfile.worker          # Worker container
+│   ├── cloudbuild*.yaml           # GCP build configs
+│   ├── pytest.ini                 # Test configuration
+│   └── locustfile.py              # Load testing
 ├── ⚙️ requirements.txt            # Python dependencies
 └── ⚙️ cloudbuild-*.yaml          # GCP build configs
 ```
@@ -515,7 +522,7 @@ Secure-Medical-AI/
 
 **For complete API details, visit:** http://localhost:8000/docs (when running)
 
-**For detailed architecture, see:** [ARCHITECTURE.md](ARCHITECTURE.md)
+**For detailed architecture, see:** [docs/project/ARCHITECTURE.md](docs/project/ARCHITECTURE.md)
 
 ### Key Endpoints
 
@@ -799,9 +806,9 @@ Team Members:
 ## 📞 Support & Documentation
 
 ### Documentation
-- 📖 [ARCHITECTURE.md](ARCHITECTURE.md) - Complete system architecture
-- 📋 [PROJECT_PROPOSAL.md](PROJECT_PROPOSAL.md) - Project overview and proposal
-- 📁 [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) - Project structure documentation
+- 📖 [docs/project/ARCHITECTURE.md](docs/project/ARCHITECTURE.md) - Complete system architecture
+- 📋 [docs/project/PROJECT_PROPOSAL.md](docs/project/PROJECT_PROPOSAL.md) - Project overview and proposal
+- 📄 [docs/project/PROJECT_REPORT.md](docs/project/PROJECT_REPORT.md) - Project report
 - 📚 [docs/README.md](docs/README.md) - Documentation index
 - 📝 [frontend/README.md](frontend/README.md) - Frontend documentation
 - 🎯 [frontend/FEATURES.md](frontend/FEATURES.md) - Feature inventory

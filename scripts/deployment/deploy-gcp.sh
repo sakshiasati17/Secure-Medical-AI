@@ -82,7 +82,7 @@ fi
 echo -e "\n${YELLOW}Step 5: Building and deploying backend API...${NC}"
 gcloud builds submit --tag gcr.io/$PROJECT_ID/$BACKEND_SERVICE \
     --project=$PROJECT_ID \
-    -f Dockerfile.backend .
+    -f config/Dockerfile.backend .
 
 echo "Deploying backend to Cloud Run..."
 gcloud run deploy $BACKEND_SERVICE \

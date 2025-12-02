@@ -16,7 +16,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Check if we're in the right directory
-if [ ! -f "docker-compose.yml" ]; then
+if [ ! -f "config/docker-compose.yml" ]; then
     echo -e "${RED}❌ Error: Please run this script from the project root directory${NC}"
     exit 1
 fi
