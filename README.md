@@ -208,7 +208,7 @@ A secure, full-stack medical documentation platform that empowers healthcare tea
 │  │  │ audit_logs │  │  │  └───────┘  │  │  │    Search)      │   │  │
 │  │  └────────────┘  │  │             │  │  └─────────────────┘   │  │
 │  │                  │  │             │  │                          │  │
-│  │  SQLAlchemy ORM  │  │  Celery     │  │  Facebook AI Similarity  │  │
+│  │  SQLAlchemy ORM  │  │  Cloud Tasks│  │  Facebook AI Similarity  │  │
 │  └──────────────────┘  └─────────────┘  └──────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────┘
                                  │
@@ -216,7 +216,7 @@ A secure, full-stack medical documentation platform that empowers healthcare tea
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     BACKGROUND PROCESSING                                │
 │  ┌──────────────────────────────────────────────────────────────────┐  │
-│  │                      Celery Workers                               │  │
+│  │                      Cloud Tasks                                  │  │
 │  │  ┌────────────────┐  ┌──────────────────┐  ┌─────────────────┐  │  │
 │  │  │ Summarization  │  │  Batch           │  │  Risk           │  │  │
 │  │  │    Tasks       │  │  Processing      │  │  Assessment     │  │  │
@@ -238,7 +238,7 @@ A secure, full-stack medical documentation platform that empowers healthcare tea
    ↓
 5. SQLAlchemy saves to PostgreSQL
    ↓
-6. Celery task queued (via Redis)
+6. Cloud Tasks task queued
    ↓
 7. API returns 201 Created (instant response)
    ↓
@@ -246,7 +246,7 @@ A secure, full-stack medical documentation platform that empowers healthcare tea
 
 --- BACKGROUND PROCESSING ---
 
-9. Celery worker picks up task
+9. Cloud Tasks worker picks up task
    ↓
 10. Fetches note content from DB
     ↓
@@ -302,8 +302,8 @@ A secure, full-stack medical documentation platform that empowers healthcare tea
 - **Python-Dotenv** - Environment variable management
 
 ### Background Processing
-- **Celery** - Distributed task queue
-- **Redis** - Message broker for Celery
+- **Google Cloud Tasks** - Managed asynchronous task processing
+- **Redis** - Session management and caching
 
 ### DevOps
 - **Docker** - Containerization

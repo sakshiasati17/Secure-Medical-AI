@@ -853,7 +853,7 @@ docker compose up -d --build
 
 ### Planned Improvements
 1. **Microservices**: Split AI services into separate containers
-2. **Message Queue**: Add Celery for async task processing
+2. **Enhanced Monitoring**: Add Prometheus/Grafana for advanced metrics
 3. **Caching Layer**: Redis caching for frequent queries
 4. **CDN**: CloudFront for static assets
 5. **WebSockets**: Real-time updates for collaborative features

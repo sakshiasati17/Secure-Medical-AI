@@ -63,15 +63,15 @@ Medical professionals spend an average of 16 minutes per patient on documentatio
 #### Caching & Message Queue
 - **Redis 7.0+**: In-memory data store
   - Session management and caching
-  - Celery task queue backend
   - Real-time notification pub/sub
 
 #### Asynchronous Task Processing
-- **Celery 5.3+**: Distributed task queue
+- **Google Cloud Tasks**: Managed asynchronous task processing service
   - Background AI processing for note summarization
   - Batch risk assessment jobs
   - Scheduled compliance report generation
   - Email/SMS notification dispatch
+  - Fully managed service with automatic scaling and retry logic
 
 #### AI/ML Components
 - **OpenAI GPT-4o/GPT-4o-mini**: Large language models
@@ -128,7 +128,7 @@ Medical professionals spend an average of 16 minutes per patient on documentatio
 #### Cloud Deployment (Planned/Scalable Architecture)
 - **Compute Instances**: 
   - 2x Application servers (API + UI): 4 vCPU, 8GB RAM each
-  - 1x Worker server (Celery): 4 vCPU, 16GB RAM
+  - Cloud Tasks for background processing (fully managed, no worker servers needed)
   - Autoscaling group for horizontal scaling under load
 
 - **Database**: 
@@ -229,7 +229,7 @@ Medical professionals spend an average of 16 minutes per patient on documentatio
 │  │ • audit_logs           │ │  │                │                     │
 │  │                        │ │  │                ▼                     │
 │  │ Features:              │ │  │  ┌─────────────────────────────────┐ │
-│  │ • ACID compliance      │ │  │  │    Celery Worker Cluster        │ │
+│  │ • ACID compliance      │ │  │  │    Cloud Tasks Service          │ │
 │  │ • Row-level security   │ │  │  │                                 │ │
 │  │ • Encrypted fields     │ │  │  │ Background Tasks:               │ │
 │  │ • Indexed searches     │ │  │  │ • ai_tasks.summarize_note       │ │
@@ -306,8 +306,8 @@ Medical professionals spend an average of 16 minutes per patient on documentatio
 1. Doctor/Nurse creates note in UI
 2. POST to `/notes/` endpoint with note data
 3. Note saved to PostgreSQL with status='pending'
-4. Celery task `ai_tasks.summarize_note` queued in Redis
-5. Worker picks up task, calls MedicalAIService
+4. Cloud Tasks task `ai_tasks.summarize_note` queued
+5. Cloud Tasks worker picks up task, calls MedicalAIService
 6. AI service queries OpenAI API for summarization
 7. Historical notes retrieved from FAISS for context
 8. Summary and risk score saved back to PostgreSQL
@@ -318,7 +318,7 @@ Medical professionals spend an average of 16 minutes per patient on documentatio
 1. User requests risk report in UI
 2. GET to `/ai/risk-report/{patient_id}`
 3. API retrieves all patient notes from PostgreSQL
-4. Celery task `ai_tasks.assess_risk` queued
+4. Cloud Tasks task `ai_tasks.assess_risk` queued
 5. Risk agent analyzes notes using GPT-4o
 6. Risk score, factors, and recommendations generated
 7. Results cached in Redis for 1 hour
@@ -367,23 +367,23 @@ Response: {id: 456, patient_id: 123, summary: null, status: "pending"}
 
 ### 5.3 Async Task Processing
 
-**FastAPI → Redis → Celery Workers:**
-- **Task Queue**: Redis list data structure
-- **Result Backend**: Redis key-value store
-- **Task Routing**: Separate queues for AI, notifications, reports
-- **Concurrency**: 4 worker processes, 2 threads each
+**FastAPI → Cloud Tasks → Background Workers:**
+- **Task Queue**: Google Cloud Tasks managed service
+- **Task Routing**: Separate queues for AI operations
+- **Automatic Scaling**: Cloud Tasks handles worker scaling automatically
+- **Retry Logic**: Built-in retry with exponential backoff
 
 **Task Lifecycle:**
-1. API enqueues task: `summarize_note.delay(note_id=456)`
-2. Redis stores task in queue: `celery:tasks:default`
-3. Worker fetches task: `BLPOP celery:tasks:default`
-4. Worker executes task function
-5. Result stored: `SET celery-task-meta-<task_id> <result>`
-6. API polls for result: `GET celery-task-meta-<task_id>`
+1. API creates Cloud Task: `create_ai_summarization_task(note_id=456)`
+2. Cloud Tasks queues the task
+3. Cloud Tasks worker endpoint receives task
+4. Worker executes task function (AI processing)
+5. Results stored in PostgreSQL database
+6. Frontend polls for updated note status
 
 ### 5.4 AI Service Integration
 
-**Celery Worker → LangChain → OpenAI:**
+**Cloud Tasks Worker → LangChain → OpenAI:**
 - **API Calls**: HTTPS POST to `https://api.openai.com/v1/chat/completions`
 - **Rate Limiting**: 10,000 TPM (tokens per minute) limit
 - **Retry Logic**: Exponential backoff for transient failures (3 retries)
@@ -476,7 +476,7 @@ Response: {id: 456, patient_id: 123, summary: null, status: "pending"}
 - **Interactive API Docs**: FastAPI auto-generated Swagger UI at `/docs`
 - **Database Inspection**: PostgreSQL CLI + pgAdmin for query debugging
 - **Redis Monitoring**: Redis CLI for queue inspection
-- **Celery Flower**: Web UI for monitoring worker tasks
+- **Cloud Tasks Console**: GCP console for monitoring background tasks
 
 ### 6.2 Testing Strategy
 
@@ -558,14 +558,14 @@ Our project extensively utilizes **four distinct cloud technologies**, demonstra
   - Automatic failover with Redis Sentinel
   - Data persistence with AOF/RDB snapshots
 
-### 7.3 Distributed Task Processing (Celery)
+### 7.3 Distributed Task Processing (Google Cloud Tasks)
 - **Why It Qualifies**: Asynchronous job processing is a fundamental cloud pattern (similar to AWS Lambda, Google Cloud Functions)
-- **Our Use**: Background AI processing, scheduled tasks, notification delivery
+- **Our Use**: Background AI processing for note summarization and risk assessment
 - **Cloud Features**:
-  - Horizontal scaling of worker nodes
+  - Fully managed service with automatic scaling
   - Fault tolerance with automatic retries
-  - Task prioritization and routing
-  - Monitoring and observability
+  - Task scheduling and routing
+  - Built-in monitoring and observability via GCP Console
 
 ### 7.4 External AI APIs (OpenAI)
 - **Why It Qualifies**: AI-as-a-Service platforms (OpenAI, AWS Bedrock, Google Vertex AI) are modern cloud offerings
@@ -637,7 +637,7 @@ We are containerized with Docker and ready for deployment on any cloud platform:
 
 ### From a Learning Perspective:
 - **Cloud-Native Design**: Learn distributed systems architecture patterns
-- **Async Programming**: Master Celery, Redis, and background job processing
+- **Async Programming**: Master Cloud Tasks, Redis, and background job processing
 - **API Development**: Build robust, documented, testable REST APIs
 - **Data Engineering**: Handle embeddings, vector search, and semantic similarity
 - **DevOps Skills**: Containerization, orchestration, monitoring

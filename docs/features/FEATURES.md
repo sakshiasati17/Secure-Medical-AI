@@ -93,28 +93,6 @@
 - **System Notifications**: Platform updates
 - **Alert Settings**: Customizable preferences
 
-#### 10. **🌐 Multi-Language Support**
-- **6 Languages**: English, Spanish, French, German, Hindi, Chinese
-- **Easy Switching**: One-click language change
-- **Full Translation**: All UI elements translated
-- **Note Translation**: Translate medical notes
-
-#### 11. **📧 Email/SMS Notifications**
-- **Automated Reminders**: Appointment reminders
-- **Critical Alerts**: Emergency notifications for staff
-- **Lab Results**: Patient notifications
-- **Medication Reminders**: SMS medication alerts
-- **Follow-up Reminders**: Automated follow-up scheduling
-- **Discharge Instructions**: Email discharge summaries
-
-#### 12. **📄 Automated Report Generation**
-- **Daily Summary Reports**: Daily activity reports
-- **Weekly Reports**: Weekly analytics
-- **Patient Reports**: Individual patient history
-- **Risk Assessment Reports**: Comprehensive risk analysis
-- **Department Reports**: Department-specific metrics
-- **PDF Export**: Professional PDF reports
-- **Scheduled Reports**: Automated report delivery
 
 ### 🚀 **Quick Login Feature**
 - **One-Click Doctor Login**: Instant access for doctors
@@ -171,10 +149,10 @@
 
 ### 🔧 **Technical Features**
 - **FastAPI Backend**: High-performance API
-- **Streamlit Frontend**: Interactive UI
+- **React Frontend**: Modern TypeScript UI
 - **PostgreSQL Database**: Reliable data storage
 - **Redis**: Message queue
-- **Celery**: Background task processing
+- **Cloud Tasks**: Managed background task processing
 - **Docker**: Containerization ready
 - **OpenAI Integration**: GPT-4 and embeddings
 - **FAISS**: Vector database for RAG
@@ -229,7 +207,7 @@
    uvicorn api.main:app --host 0.0.0.0 --port 8000
    
    # Terminal 2 - UI
-   streamlit run ui/app.py --server.port 8501 --server.address 0.0.0.0
+   npm run dev  # Starts React frontend on port 3000
    ```
 
 2. **Access Application:**
@@ -255,9 +233,6 @@
 ✅ Beautiful, professional UI  
 ✅ Comprehensive patient management  
 ✅ Advanced AI features  
-✅ Multi-language support  
-✅ Email/SMS notifications  
-✅ Automated reporting  
 ✅ 50+ medical notes for testing  
 ✅ 8+ users to test different roles  
 ✅ Production-ready codebase  
