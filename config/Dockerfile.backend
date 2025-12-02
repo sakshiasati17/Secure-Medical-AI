@@ -19,7 +19,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY api/ ./api/
-COPY .env.production .env
+
+# Prepare environment file if present; otherwise create empty to satisfy runtime imports
+RUN if [ -f .env.production ]; then cp .env.production .env; else touch .env; fi
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app

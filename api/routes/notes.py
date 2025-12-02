@@ -7,6 +7,8 @@ from api.schemas.note import NoteCreate, NoteUpdate, NoteResponse, NoteSummary
 from api.models.note import Note
 from api.models.user import User
 from api.deps import get_current_active_user
+from api.agents.summarization_agent import _normalize_risk_level
+from api.services.ai_service import MedicalAIService
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 
@@ -48,11 +50,17 @@ def get_notes(
     for note in notes:
         # Provide placeholder content so the UI never shows "no content"
         default_content = note.content or "Clinical note content pending. This placeholder ensures demos never render empty notes."
-        # Simple fallback summary pulled from content
-        default_summary = note.summary or (default_content[:180] + ("..." if len(default_content) > 180 else ""))
-        # Light, human-readable defaults for risk/recommendations to keep AI sections populated
-        default_risk = note.risk_level or "medium"
-        default_recommendations = note.recommendations or "Continue monitoring, encourage hydration, and schedule follow-up if symptoms persist."
+        # Smarter fallback AI summary/recommendations when an AI run hasn't populated the record
+        mock_ai = MedicalAIService.build_structured_mock_summary(
+            default_content,
+            note_type=note.note_type.value if hasattr(note.note_type, "value") else "general"
+        )
+        default_summary = note.summary or mock_ai["summary"]
+        default_risk = _normalize_risk_level(note.risk_level) or mock_ai.get("risk_level", "medium")
+        default_recommendations = note.recommendations or mock_ai.get(
+            "recommendations",
+            "Monitor symptoms, document changes, and schedule follow-up if no improvement."
+        )
 
         note_summaries.append(NoteSummary(
             id=note.id,

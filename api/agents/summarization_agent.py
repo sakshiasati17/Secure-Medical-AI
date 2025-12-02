@@ -20,30 +20,47 @@ class SummarizationAgent:
             patient_context = self._build_patient_context(patient, db)
             
             # Generate summary
-            summary_result = self.ai_service.summarize_note(
-                note_content=note.content,
-                note_type=note.note_type.value,
-                patient_context=patient_context
-            )
+            if hasattr(self.ai_service, "summarize_note"):
+                summary_result = self.ai_service.summarize_note(
+                    note_content=note.content,
+                    note_type=note.note_type.value,
+                    patient_context=patient_context
+                )
+            else:
+                # Defensive fallback for older AI service implementations
+                summary_result = self.ai_service.summarize_medical_note(
+                    note_content=note.content,
+                    note_type=note.note_type.value,
+                    patient_history=None
+                )
             
             # Assess risk
             patient_history = self._get_patient_history(patient.id, db)
-            risk_result = self.ai_service.assess_risk(
-                note_content=note.content,
-                patient_history=patient_history
-            )
+            if hasattr(self.ai_service, "assess_risk"):
+                risk_result = self.ai_service.assess_risk(
+                    note_content=note.content,
+                    patient_history=patient_history
+                )
+            else:
+                risk_result = self.ai_service.assess_patient_risk(
+                    note_content=note.content,
+                    patient_history=patient_history
+                )
             
             # Generate nurse recommendations if it's a nurse note
             nurse_recommendations = {}
             if note.note_type.value == "nurse_note":
-                nurse_recommendations = self.ai_service.generate_nurse_recommendations(
-                    note_content=note.content,
-                    patient_context=patient_context
-                )
+                if hasattr(self.ai_service, "generate_nurse_recommendations"):
+                    nurse_recommendations = self.ai_service.generate_nurse_recommendations(
+                        note_content=note.content,
+                        patient_context=patient_context
+                    )
+                else:
+                    nurse_recommendations = {}
             
             # Update note with AI results
             note.summary = summary_result["summary"]
-            note.risk_level = risk_result["risk_level"]
+            note.risk_level = _normalize_risk_level(risk_result.get("risk_level"))
             
             # Combine recommendations
             all_recommendations = []
@@ -123,3 +140,10 @@ class SummarizationAgent:
             tags.append(f"Risk-{risk_result['risk_level']}")
         
         return list(set(tags))  # Remove duplicates
+def _normalize_risk_level(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return value
+    lowered = value.lower()
+    if lowered in {"high", "medium", "low"}:
+        return lowered
+    return lowered

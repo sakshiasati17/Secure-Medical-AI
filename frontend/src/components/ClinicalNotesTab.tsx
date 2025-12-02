@@ -520,17 +520,6 @@ export function ClinicalNotesTab({ darkMode }: ClinicalNotesTabProps) {
                     </>
                   )}
                 </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleGenerateWithAI}
-                  className={`px-6 py-3 ${
-                    darkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  } rounded-xl transition-colors flex items-center gap-2`}
-                >
-                  <Sparkles className="w-5 h-5" />
-                  <span>Generate with AI</span>
-                </motion.button>
               </div>
             </div>
           </div>

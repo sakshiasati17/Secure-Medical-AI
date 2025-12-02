@@ -11,7 +11,7 @@ steps:
       - '-t'
       - 'gcr.io/$PROJECT_ID/mednotes-backend:latest'
       - '-f'
-      - 'Dockerfile.backend'
+      - 'config/Dockerfile.backend'
       - '.'
 
   # Push Backend Image

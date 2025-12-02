@@ -93,13 +93,34 @@ export function AIAnalyticsTab({ darkMode, tasks, setActiveTab, onViewTasks, onA
   const [loadingHighRisk, setLoadingHighRisk] = useState(false);
   const [patientSummaries, setPatientSummaries] = useState<Record<number, string>>({});
   const [patientSummaryLoading, setPatientSummaryLoading] = useState<number | null>(null);
+  const [noteSummaries, setNoteSummaries] = useState<Record<number, string>>({});
+  const [noteSummaryLoading, setNoteSummaryLoading] = useState<number | null>(null);
+
+  // Task helpers
+  const pendingTasks = tasks.filter((t) => t.status === 'pending');
+  const completedTasks = tasks.filter((t) => t.status === 'completed');
+  const upcomingTasks = pendingTasks.filter((t) => {
+    if (!t.dueDate) return false;
+    const due = new Date(`${t.dueDate} ${t.dueTime || '00:00'}`);
+    return due.getTime() >= Date.now();
+  });
+  const sortedPending = [...pendingTasks].sort((a, b) => {
+    const aDate = new Date(`${a.dueDate} ${a.dueTime || '00:00'}`).getTime();
+    const bDate = new Date(`${b.dueDate} ${b.dueTime || '00:00'}`).getTime();
+    return aDate - bDate;
+  });
+  const quickTasks = sortedPending.slice(0, 3);
 
   const cardBgClass = darkMode
     ? 'bg-slate-800/80 border-slate-700/50'
     : 'bg-white/50 border-white/60';
   const textClass = darkMode ? 'text-white' : 'text-slate-900';
   const textSecondaryClass = darkMode ? 'text-slate-400' : 'text-slate-600';
-  const quickActionClass = `${darkMode ? 'bg-slate-800/80 text-slate-200 hover:bg-slate-700/80' : 'bg-white/60 text-slate-700 hover:bg-white/80'} rounded-xl border ${darkMode ? 'border-slate-700' : 'border-white/50'} px-4 py-3 transition-all flex items-center justify-center gap-2`;
+  const activeTabGradient = 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg';
+  const inactiveTabClass = darkMode
+    ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80'
+    : 'bg-white/50 text-slate-600 hover:bg-white/80';
+  const quickActionClass = `${darkMode ? 'bg-slate-800/80 text-slate-200 hover:bg-slate-700/80' : 'bg-white/60 text-slate-700 hover:bg-white/80'} rounded-xl border ${darkMode ? 'border-slate-700' : 'border-white/50'} px-4 py-2.5 transition-all flex items-center justify-center gap-2 text-sm font-semibold`;
 
   useEffect(() => {
     fetchAllData();
@@ -183,6 +204,45 @@ export function AIAnalyticsTab({ darkMode, tasks, setActiveTab, onViewTasks, onA
     await fetchPatientTimeline(patient.id);
   };
 
+  const handleGenerateNoteSummary = async (noteId: number) => {
+    try {
+      setNoteSummaryLoading(noteId);
+      const result = await api.summarizeNote(noteId);
+      const riskLevel = (result.risk_level || '').toUpperCase();
+
+      // Update local display cache
+      setNoteSummaries((prev) => ({ ...prev, [noteId]: result.summary }));
+
+      // Update local notes state so counts/badges refresh
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.id === noteId
+            ? {
+                ...n,
+                summary: result.summary || n.summary,
+                risk_level: riskLevel || n.risk_level,
+              }
+            : n
+        )
+      );
+
+      // Persist back to backend to keep counts consistent after reload (best effort)
+      try {
+        await api.updateNote(noteId, {
+          summary: result.summary,
+          risk_level: riskLevel.toLowerCase(),
+          recommendations: result.recommendations,
+        });
+      } catch (persistError) {
+        console.warn('Unable to persist AI summary to backend (non-blocking):', persistError);
+      }
+    } catch (error) {
+      console.error('Failed to generate note summary:', error);
+    } finally {
+      setNoteSummaryLoading(null);
+    }
+  };
+
   useEffect(() => {
     if (activeAIView === 'high-risk') {
       fetchHighRiskPatients();
@@ -202,46 +262,104 @@ export function AIAnalyticsTab({ darkMode, tasks, setActiveTab, onViewTasks, onA
   const totalPatients = patients.length;
   const recentNotes = notes.slice(0, 5);
   const notesWithAISummary = notes.filter(n => n.summary).length;
-  const highRiskNotes = notes.filter(n => n.risk_level === 'HIGH').length;
+  const highRiskNotes = notes.filter(n => (n.risk_level || '').toUpperCase() === 'HIGH').length;
 
   return (
     <div className="space-y-6">
       {/* AI Header */}
       <div className={`${cardBgClass} backdrop-blur-xl rounded-2xl p-6 border shadow-lg`}>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-lg">
-            <Brain className="w-6 h-6 text-white" />
-          </div>
+        <div className="grid lg:grid-cols-[1.2fr,1fr] gap-4 items-start">
           <div>
-            <h2 className={`text-2xl font-bold ${textClass}`}>AI Medical Intelligence</h2>
-            <p className={textSecondaryClass}>
-              AI-powered patient insights, risk assessment, and clinical decision support
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-3 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-lg">
+                <Brain className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className={`text-2xl font-bold ${textClass}`}>AI Medical Intelligence</h2>
+                <p className={textSecondaryClass}>
+                  AI-powered patient insights, risk assessment, and clinical decision support
+                </p>
+              </div>
+            </div>
+            <p className={`${textSecondaryClass} text-sm`}>
+              Explore summaries, risk cohorts, and patient timelines with consistent controls.
             </p>
           </div>
-        </div>
 
-        {/* Quick Todo shortcuts for nurse demo */}
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button
-            onClick={() => {
-              onAddTask?.();
-              setActiveTab('notes');
-            }}
-            className={quickActionClass}
-          >
-            <Plus className="w-4 h-4" />
-            Add Task
-          </button>
-          <button
-            onClick={() => {
-              onViewTasks?.();
-              setActiveTab('notes');
-            }}
-            className={quickActionClass}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            View Tasks
-          </button>
+          {/* Quick To-Do (Doctor) */}
+          <div className={`${darkMode ? 'bg-slate-900/60 border-slate-800/70' : 'bg-white/70 border-white/60'} rounded-xl border p-4 shadow-md`}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className={`text-xs uppercase tracking-wide ${textSecondaryClass}`}>Quick To-Do</p>
+                <h3 className={`text-lg font-semibold ${textClass}`}>Tasks Overview</h3>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    onAddTask?.();
+                    setActiveTab('tasks');
+                  }}
+                  className={quickActionClass}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Task
+                </button>
+                <button
+                  onClick={() => {
+                    onViewTasks?.();
+                    setActiveTab('tasks');
+                  }}
+                  className={quickActionClass}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  View Tasks
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 mb-3">
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600">
+                Pending: {pendingTasks.length}
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600">
+                Upcoming: {upcomingTasks.length}
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-600">
+                Completed: {completedTasks.length}
+              </span>
+            </div>
+
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+              {quickTasks.length === 0 ? (
+                <p className={`text-sm ${textSecondaryClass}`}>No pending tasks. Add a new one to get started.</p>
+              ) : (
+                quickTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className={`${darkMode ? 'bg-slate-800/70' : 'bg-white/80'} rounded-lg border ${darkMode ? 'border-slate-700' : 'border-slate-200'} px-3 py-2 flex items-start justify-between gap-3`}
+                  >
+                    <div>
+                      <p className={`text-sm font-semibold ${textClass}`}>{task.title}</p>
+                      <p className={`text-xs ${textSecondaryClass}`}>
+                        {task.dueDate} {task.dueTime ? `• ${task.dueTime}` : ''}
+                      </p>
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded-full text-[11px] font-semibold ${
+                        task.priority === 'high'
+                          ? 'bg-red-500/10 text-red-600'
+                          : task.priority === 'medium'
+                          ? 'bg-amber-500/10 text-amber-600'
+                          : 'bg-emerald-500/10 text-emerald-600'
+                      }`}
+                    >
+                      {task.priority}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -250,11 +368,7 @@ export function AIAnalyticsTab({ darkMode, tasks, setActiveTab, onViewTasks, onA
         <button
           onClick={() => setActiveAIView('summary')}
           className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all ${
-            activeAIView === 'summary'
-              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
-              : darkMode
-              ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80'
-              : 'bg-white/50 text-slate-600 hover:bg-white/80'
+            activeAIView === 'summary' ? activeTabGradient : inactiveTabClass
           }`}
         >
           <Sparkles className="w-5 h-5 inline mr-2" />
@@ -263,11 +377,7 @@ export function AIAnalyticsTab({ darkMode, tasks, setActiveTab, onViewTasks, onA
         <button
           onClick={() => setActiveAIView('high-risk')}
           className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all ${
-            activeAIView === 'high-risk'
-              ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-lg'
-              : darkMode
-              ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80'
-              : 'bg-white/50 text-slate-600 hover:bg-white/80'
+            activeAIView === 'high-risk' ? activeTabGradient : inactiveTabClass
           }`}
         >
           <AlertTriangle className="w-5 h-5 inline mr-2" />
@@ -276,11 +386,7 @@ export function AIAnalyticsTab({ darkMode, tasks, setActiveTab, onViewTasks, onA
         <button
           onClick={() => setActiveAIView('timeline')}
           className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all ${
-            activeAIView === 'timeline'
-              ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
-              : darkMode
-              ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80'
-              : 'bg-white/50 text-slate-600 hover:bg-white/80'
+            activeAIView === 'timeline' ? activeTabGradient : inactiveTabClass
           }`}
         >
           <LineChart className="w-5 h-5 inline mr-2" />
@@ -358,13 +464,14 @@ export function AIAnalyticsTab({ darkMode, tasks, setActiveTab, onViewTasks, onA
             <div className="space-y-3">
               {recentNotes.filter(n => n.summary).map((note) => {
                 const patient = patients.find(p => p.id === note.patient_id);
+                const summaryText = noteSummaries[note.id] || note.summary;
                 return (
                   <div
                     key={note.id}
                     className={`p-4 ${darkMode ? 'bg-slate-700/50 hover:bg-slate-700' : 'bg-white/60 hover:bg-white/80'} rounded-xl border ${
                       darkMode ? 'border-slate-600' : 'border-white/40'
                     } cursor-pointer transition-all`}
-                    onClick={() => setActiveTab('notes')}
+                    onClick={() => handleGenerateNoteSummary(note.id)}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
@@ -383,9 +490,12 @@ export function AIAnalyticsTab({ darkMode, tasks, setActiveTab, onViewTasks, onA
                         </span>
                       )}
                     </div>
-                    {note.summary && (
-                      <p className={`text-sm ${textSecondaryClass} line-clamp-2`}>{note.summary}</p>
+                    {summaryText && (
+                      <p className={`text-sm ${textSecondaryClass} whitespace-pre-wrap line-clamp-4`}>
+                        {noteSummaryLoading === note.id ? 'AI… generating summary...' : summaryText}
+                      </p>
                     )}
+                    <p className="text-xs text-purple-500 mt-2">Click to refresh AI summary (3-4 lines)</p>
                   </div>
                 );
               })}

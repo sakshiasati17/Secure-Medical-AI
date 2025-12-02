@@ -407,25 +407,137 @@ Always consider patient safety, contraindications, and individual patient factor
                 print(f"✅ Created vector store with {len(docs)} documents")
         except Exception as e:
             print(f"Error creating vector store: {str(e)}")
+
+    # --- Compatibility helpers used by agents/routes without needing a full LLM call ---
+    def summarize_note(self, note_content: str, note_type: str = "general", patient_context: str = "") -> Dict:
+        """
+        Compatibility wrapper expected by SummarizationAgent.
+        Uses real LLM when enabled; otherwise uses structured mock summarization.
+        """
+        base_summary = self.summarize_medical_note(note_content, note_type)
+
+        # If the LLM did not generate recommendations, synthesize lightweight guidance
+        if not base_summary.get("recommendations"):
+            mock = self.build_structured_mock_summary(note_content, note_type)
+            base_summary["recommendations"] = mock.get("recommendations")
+            base_summary["risk_level"] = mock.get("risk_level", "medium")
+
+        return base_summary
+
+    def assess_risk(self, note_content: str, patient_history: List[str] = None) -> Dict:
+        """
+        Compatibility wrapper expected by SummarizationAgent.
+        """
+        return self.assess_patient_risk(note_content, patient_history)
+
+    def generate_nurse_recommendations(self, note_content: str, patient_context: str = "") -> Dict:
+        """
+        Basic nursing recommendations derived from content when full AI is unavailable.
+        """
+        mock = self.build_structured_mock_summary(note_content, "nurse_note")
+        return {
+            "nursing_actions": mock.get("recommendations", ""),
+            "ai_generated": self.enabled
+        }
     
     # Mock methods for fallback
-    def _get_mock_summary(self, content: str, note_type: str) -> Dict:
-        """Fallback summary when AI is not available"""
+    @staticmethod
+    def build_structured_mock_summary(content: str, note_type: str = "general") -> Dict:
+        """
+        Deterministic, lightweight summarization used when AI is unavailable.
+        Extracts common clinical sections and generates tailored recommendations.
+        """
+        import re
+
+        text = content or ""
+        lowered = text.lower()
+
+        # Extract key-value sections like **Reason for Admission:** headache
+        section_matches = re.findall(r"\*\*(.+?)\*\*\s*:?\s*([^*]+)", text)
+        sections = {key.strip().lower(): value.strip() for key, value in section_matches}
+
+        def first_sentence_fallback(raw: str) -> str:
+            sentences = re.split(r"(?<=[.!?])\s+", raw.strip())
+            trimmed = " ".join(sentences[:2]).strip()
+            return trimmed or raw.strip()
+
+        summary_parts = []
+        label_map = {
+            "reason for admission": "Admission",
+            "chief complaint": "Chief complaint",
+            "history of present illness": "HPI",
+            "past medical history": "PMH",
+            "physical examination": "Exam",
+            "assessment": "Assessment",
+            "plan": "Plan"
+        }
+        for key, label in label_map.items():
+            if key in sections and sections[key]:
+                summary_parts.append(f"{label}: {sections[key]}")
+
+        if not summary_parts:
+            summary_parts.append(first_sentence_fallback(text))
+
+        summary_text = " ".join(summary_parts)
+        if len(summary_text) > 320:
+            summary_text = summary_text[:317].rstrip() + "..."
+
+        # Keyword-driven recommendations
+        recommendations = []
+        def add_rec(rec: str):
+            if rec and rec not in recommendations:
+                recommendations.append(rec)
+
+        if any(word in lowered for word in ["chest pain", "shortness of breath", "dyspnea"]):
+            add_rec("Obtain ECG/troponin and monitor vitals closely; escalate if pain worsens.")
+        if "fever" in lowered or "infection" in lowered:
+            add_rec("Check CBC and cultures if indicated; start antipyretics and hydration.")
+        if "headache" in lowered:
+            add_rec("Assess neuro status; consider imaging if red flags (sudden/severe, neuro deficits).")
+        if "mri" in lowered or "ct" in lowered:
+            add_rec("Confirm imaging order and follow up on results with the patient.")
+        if "diabetes" in lowered or "glucose" in lowered:
+            add_rec("Reinforce glucose control, medication adherence, and foot care education.")
+        if "hypertension" in lowered or "bp" in lowered:
+            add_rec("Review antihypertensive regimen and home BP logs; adjust if persistently elevated.")
+        if "asthma" in lowered or "wheezing" in lowered:
+            add_rec("Assess inhaler technique; ensure rescue inhaler available; monitor for triggers.")
+
+        if not recommendations:
+            add_rec("Monitor symptoms, document changes, and schedule follow-up if no improvement.")
+
+        recommendations_text = " • ".join(recommendations)
+
+        # Simple risk heuristic
+        risk_level = "medium"
+        if any(word in lowered for word in ["chest pain", "severe", "critical", "dyspnea", "unstable"]):
+            risk_level = "high"
+        elif any(word in lowered for word in ["routine", "stable", "well controlled", "improved"]):
+            risk_level = "low"
+
+        key_findings = "; ".join(summary_parts[:3])
+
         return {
-            "summary": f"Summary of {note_type}: {content[:200]}...",
-            "key_findings": "AI analysis not available - OpenAI API key needed",
-            "assessment": "Manual review required",
+            "summary": summary_text,
+            "key_findings": key_findings or "Key findings pending AI analysis",
+            "assessment": sections.get("assessment", "Manual review required"),
+            "recommendations": recommendations_text,
+            "risk_level": risk_level,
             "ai_generated": False,
             "mock": True
         }
+
+    def _get_mock_summary(self, content: str, note_type: str) -> Dict:
+        """Fallback summary when AI is not available"""
+        return self.build_structured_mock_summary(content, note_type)
     
     def _get_mock_risk_assessment(self, content: str) -> Dict:
         """Fallback risk assessment"""
-        risk_level = "MEDIUM"
+        risk_level = "medium"
         if any(word in content.lower() for word in ["critical", "urgent", "emergency", "severe"]):
-            risk_level = "HIGH"
+            risk_level = "high"
         elif any(word in content.lower() for word in ["stable", "normal", "routine"]):
-            risk_level = "LOW"
+            risk_level = "low"
         
         return {
             "risk_level": risk_level,

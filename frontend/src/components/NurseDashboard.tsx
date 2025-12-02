@@ -40,7 +40,7 @@ interface Task {
   title: string;
   due: string;
   priority: 'High' | 'Medium' | 'Low';
-  status: 'upcoming' | 'completed';
+  status: 'pending' | 'completed';
   created_at: string;
   completed_at: string | null;
 }
@@ -75,7 +75,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
   const [activeTab, setActiveTab] = useState<'dashboard' | 'patients' | 'notes' | 'analytics' | 'calendar'>('dashboard');
   const [notesSubTab, setNotesSubTab] = useState<'nurse-notes' | 'tasks' | 'vitals'>('nurse-notes');
   const [notesLibrarySubTab, setNotesLibrarySubTab] = useState<'create' | 'library'>('create');
-  const [tasksSubTab, setTasksSubTab] = useState<'upcoming' | 'completed' | 'add'>('upcoming');
+  const [tasksSubTab, setTasksSubTab] = useState<'pending' | 'completed' | 'add'>('pending');
   const [vitalsSubTab, setVitalsSubTab] = useState<'record' | 'history'>('record');
 
   // State for API data
@@ -178,7 +178,11 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
     // Load tasks from localStorage
     const savedTasks = localStorage.getItem('nurse_tasks');
     if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
+      const parsed: Task[] = JSON.parse(savedTasks).map((t: Task) => ({
+        ...t,
+        status: t.status === 'completed' ? 'completed' : 'pending', // normalize legacy "upcoming"
+      }));
+      setTasks(parsed);
     } else {
       // Initialize with default tasks
       const defaultTasks: Task[] = [
@@ -187,7 +191,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
           title: 'Administer medication - Room 305',
           due: '10:30 AM',
           priority: 'High',
-          status: 'upcoming',
+          status: 'pending',
           created_at: new Date().toISOString(),
           completed_at: null,
         },
@@ -196,7 +200,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
           title: 'Wound dressing change - Room 307',
           due: '11:00 AM',
           priority: 'Medium',
-          status: 'upcoming',
+          status: 'pending',
           created_at: new Date().toISOString(),
           completed_at: null,
         },
@@ -205,7 +209,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
           title: 'Patient education - Room 310',
           due: '02:00 PM',
           priority: 'Low',
-          status: 'upcoming',
+          status: 'pending',
           created_at: new Date().toISOString(),
           completed_at: null,
         },
@@ -400,7 +404,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
       title: taskForm.description.trim(),
       due: taskForm.due_time,
       priority: taskForm.priority,
-      status: 'upcoming',
+      status: 'pending',
       created_at: new Date().toISOString(),
       completed_at: null,
     };
@@ -501,7 +505,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
     {
       icon: ClipboardList,
       label: 'Tasks Pending',
-      value: tasks.filter(t => t.status === 'upcoming').length.toString(),
+      value: tasks.filter(t => t.status === 'pending').length.toString(),
       change: 'updated 5m ago',
       gradient: 'from-purple-500 to-pink-500',
     },
@@ -970,7 +974,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
               onClick={() => setNotesSubTab(tab.id)}
               className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
                 notesSubTab === tab.id
-                  ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
                   : darkMode
                   ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
                   : 'bg-white/50 text-slate-700 hover:bg-white/80'
@@ -990,7 +994,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
                 onClick={() => setNotesLibrarySubTab('create')}
                 className={`px-4 py-2 rounded-xl transition-all ${
                   notesLibrarySubTab === 'create'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
                     : darkMode
                     ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
                     : 'bg-white/50 text-slate-700 hover:bg-white/80'
@@ -1002,7 +1006,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
                 onClick={() => setNotesLibrarySubTab('library')}
                 className={`px-4 py-2 rounded-xl transition-all ${
                   notesLibrarySubTab === 'library'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
                     : darkMode
                     ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
                     : 'bg-white/50 text-slate-700 hover:bg-white/80'
@@ -1117,31 +1121,16 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
                     </div>
                   )}
 
-                  <div className="flex gap-3">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      type="submit"
-                      disabled={loading}
-                      className="flex-1 px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      <ClipboardList className="w-5 h-5" />
-                      <span className="font-semibold">{loading ? 'Saving...' : 'Save Note'}</span>
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleGenerateNurseNoteWithAI}
-                      disabled={loading}
-                      type="button"
-                      className={`px-6 py-3 ${
-                        darkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                      } rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50`}
-                    >
-                      <Brain className="w-5 h-5" />
-                      <span>Generate with AI</span>
-                    </motion.button>
-                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="submit"
+                    disabled={loading}
+                    className="w-full px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <ClipboardList className="w-5 h-5" />
+                    <span className="font-semibold">{loading ? 'Saving...' : 'Save Note'}</span>
+                  </motion.button>
                 </form>
               </motion.div>
             )}
@@ -1204,13 +1193,13 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
                             <div className="flex items-center gap-2">
                               {note.risk_level && (
                                 <span className={`px-3 py-1 rounded-full text-xs ${
-                                  note.risk_level === 'high'
+                                  (note.risk_level || '').toLowerCase() === 'high'
                                     ? 'bg-red-500/20 text-red-400 border border-red-500/40'
-                                    : note.risk_level === 'medium'
+                                    : (note.risk_level || '').toLowerCase() === 'medium'
                                     ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
                                     : 'bg-green-500/20 text-green-400 border border-green-500/40'
                                 }`}>
-                                  {note.risk_level}
+                                  {(note.risk_level || '').toUpperCase()}
                                 </span>
                               )}
                             </div>
@@ -1235,22 +1224,22 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
             {/* Task Sub-tabs */}
             <div className="flex gap-2">
               <button
-                onClick={() => setTasksSubTab('upcoming')}
+                onClick={() => setTasksSubTab('pending')}
                 className={`px-4 py-2 rounded-xl transition-all ${
-                  tasksSubTab === 'upcoming'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                  tasksSubTab === 'pending'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
                     : darkMode
                     ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
                     : 'bg-white/50 text-slate-700 hover:bg-white/80'
                 }`}
               >
-                Upcoming Tasks
+                Pending Tasks
               </button>
               <button
                 onClick={() => setTasksSubTab('completed')}
                 className={`px-4 py-2 rounded-xl transition-all ${
                   tasksSubTab === 'completed'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
                     : darkMode
                     ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
                     : 'bg-white/50 text-slate-700 hover:bg-white/80'
@@ -1262,7 +1251,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
                 onClick={() => setTasksSubTab('add')}
                 className={`px-4 py-2 rounded-xl transition-all ${
                   tasksSubTab === 'add'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
                     : darkMode
                     ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
                     : 'bg-white/50 text-slate-700 hover:bg-white/80'
@@ -1272,16 +1261,16 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
               </button>
             </div>
 
-            {tasksSubTab === 'upcoming' && (
+            {tasksSubTab === 'pending' && (
               <div className="space-y-3">
-                {tasks.filter(t => t.status === 'upcoming').length === 0 ? (
+                {tasks.filter(t => t.status === 'pending').length === 0 ? (
                   <div className={`${cardBgClass} backdrop-blur-xl rounded-2xl p-8 border shadow-lg text-center`}>
                     <p className={`${textSecondaryClass} mb-2`}>All tasks completed. Great job!</p>
                     <span className="text-4xl">🎉</span>
                   </div>
                 ) : (
                   tasks
-                    .filter(t => t.status === 'upcoming')
+                    .filter(t => t.status === 'pending')
                     .map((task, index) => (
                       <motion.div
                         key={task.id}
@@ -1434,7 +1423,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
                 onClick={() => setVitalsSubTab('record')}
                 className={`px-4 py-2 rounded-xl transition-all ${
                   vitalsSubTab === 'record'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
                     : darkMode
                     ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
                     : 'bg-white/50 text-slate-700 hover:bg-white/80'
@@ -1446,7 +1435,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
                 onClick={() => setVitalsSubTab('history')}
                 className={`px-4 py-2 rounded-xl transition-all ${
                   vitalsSubTab === 'history'
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
                     : darkMode
                     ? 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
                     : 'bg-white/50 text-slate-700 hover:bg-white/80'
@@ -1798,7 +1787,7 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
               onViewTasks={() => {
                 setActiveTab('notes');
                 setNotesSubTab('tasks');
-                setTasksSubTab('upcoming');
+                setTasksSubTab('pending');
               }}
               onAddTask={() => {
                 setActiveTab('notes');
@@ -1867,13 +1856,13 @@ export function NurseDashboard({ onLogout, darkMode, setDarkMode }: NurseDashboa
                     <h3 className={`text-lg ${textClass} font-semibold`}>AI Summary</h3>
                     {(aiSummary?.risk_level || viewingNote.risk_level) && (
                       <span className={`px-3 py-1 rounded-full text-xs ${
-                        (aiSummary?.risk_level || viewingNote.risk_level) === 'high'
+                        ((aiSummary?.risk_level || viewingNote.risk_level || '').toLowerCase()) === 'high'
                           ? 'bg-red-500/20 text-red-400 border border-red-500/40'
-                          : (aiSummary?.risk_level || viewingNote.risk_level) === 'medium'
+                          : ((aiSummary?.risk_level || viewingNote.risk_level || '').toLowerCase()) === 'medium'
                           ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
                           : 'bg-green-500/20 text-green-400 border border-green-500/40'
                       }`}>
-                        {(aiSummary?.risk_level || viewingNote.risk_level).toUpperCase()} RISK
+                        {(aiSummary?.risk_level || viewingNote.risk_level || '').toUpperCase()} RISK
                       </span>
                     )}
                   </div>

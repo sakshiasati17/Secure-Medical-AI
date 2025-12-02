@@ -1,5 +1,5 @@
 steps:
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-f', 'Dockerfile.worker', '-t', 'gcr.io/securemed-ai/mednotes-worker', '.']
+    args: ['build', '-f', 'config/Dockerfile.worker', '-t', 'gcr.io/securemed-ai/mednotes-worker', '.']
 images:
   - 'gcr.io/securemed-ai/mednotes-worker'
