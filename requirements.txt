@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
 pydantic[email]
+email-validator
 sqlalchemy
 psycopg2-binary
 redis
@@ -20,7 +21,7 @@ requests
 pandas
 plotly
 reportlab
-weasyprint
+# weasyprint  # Disabled for Vercel compatibility (requires system libraries)
 sendgrid
 twilio
 google-cloud-tasks

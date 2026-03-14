@@ -15,7 +15,11 @@ QUEUE_NAME = "mednotes-tasks"
 
 def get_tasks_client():
     """Get Cloud Tasks client."""
-    return tasks_v2.CloudTasksClient()
+    try:
+        return tasks_v2.CloudTasksClient()
+    except Exception as e:
+        print(f"Warning: Could not initialize Cloud Tasks client: {e}")
+        return None
 
 def create_task(
     endpoint: str,
@@ -36,9 +40,16 @@ def create_task(
         Task name/ID
     """
     client = get_tasks_client()
+    if not client or os.getenv("SKIP_CLOUD_TASKS") == "true":
+        print(f"Skipping task creation for {endpoint} (Cloud Tasks disabled or client failed)")
+        return "local-task-id"
     
     # Construct the queue path
-    parent = client.queue_path(PROJECT_ID, LOCATION, QUEUE_NAME)
+    try:
+        parent = client.queue_path(PROJECT_ID, LOCATION, QUEUE_NAME)
+    except Exception as e:
+        print(f"Error constructing queue path: {e}")
+        return "error-task-id"
     
     # Get backend URL from environment
     backend_url = os.getenv("BACKEND_URL", "https://mednotes-backend-957293469884.us-central1.run.app")
@@ -68,9 +79,12 @@ def create_task(
         task["schedule_time"] = timestamp
     
     # Create the task
-    response = client.create_task(request={"parent": parent, "task": task})
-    
-    return response.name
+    try:
+        response = client.create_task(request={"parent": parent, "task": task})
+        return response.name
+    except Exception as e:
+        print(f"Error creating task: {e}")
+        return f"error-{endpoint.replace('/', '-')}"
 
 def create_ai_summarization_task(note_id: int) -> str:
     """Create a task to summarize a clinical note."""
@@ -88,21 +102,31 @@ def create_risk_assessment_task(patient_id: int) -> str:
 
 def ensure_queue_exists():
     """Ensure the Cloud Tasks queue exists."""
+    if os.getenv("SKIP_CLOUD_TASKS") == "true":
+        print("Skipping Cloud Tasks queue check (SKIP_CLOUD_TASKS=true)")
+        return
+
     client = get_tasks_client()
-    parent = client.common_location_path(PROJECT_ID, LOCATION)
-    queue_name = client.queue_path(PROJECT_ID, LOCATION, QUEUE_NAME)
-    
+    if not client:
+        return
+
     try:
-        client.get_queue(name=queue_name)
-        print(f"Queue {QUEUE_NAME} already exists")
-    except Exception:
-        # Create the queue
-        queue = {
-            "name": queue_name,
-            "rate_limits": {
-                "max_dispatches_per_second": 10,
-                "max_concurrent_dispatches": 10,
-            },
-        }
-        client.create_queue(request={"parent": parent, "queue": queue})
-        print(f"Created queue {QUEUE_NAME}")
+        parent = client.common_location_path(PROJECT_ID, LOCATION)
+        queue_name = client.queue_path(PROJECT_ID, LOCATION, QUEUE_NAME)
+        
+        try:
+            client.get_queue(name=queue_name)
+            print(f"Queue {QUEUE_NAME} already exists")
+        except Exception:
+            # Create the queue
+            queue = {
+                "name": queue_name,
+                "rate_limits": {
+                    "max_dispatches_per_second": 10,
+                    "max_concurrent_dispatches": 10,
+                },
+            }
+            client.create_queue(request={"parent": parent, "queue": queue})
+            print(f"Created queue {QUEUE_NAME}")
+    except Exception as e:
+        print(f"Warning: Could not ensure Cloud Tasks queue exists: {e}")

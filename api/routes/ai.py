@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 import asyncio
+import os
 
 from api.db.database import get_db
 from api.models.user import User
@@ -26,14 +27,27 @@ async def summarize_note(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Generate AI summary for a specific note (async via Cloud Tasks)"""
     try:
         # Get note
         note = db.query(Note).filter(Note.id == note_id).first()
         if not note:
             raise HTTPException(status_code=404, detail="Note not found")
         
-        # Create background task for AI processing
+        # If Cloud Tasks are disabled, run synchronously for the demo
+        if os.getenv("SKIP_CLOUD_TASKS") == "true":
+            patient = db.query(Patient).filter(Patient.id == note.patient_id).first()
+            if not patient:
+                raise HTTPException(status_code=404, detail="Patient not found")
+            
+            result = summarization_agent.process_note(note, patient, db)
+            return {
+                "message": "Note summarized synchronously (Cloud Tasks skipped)",
+                "note_id": note_id,
+                "status": "completed",
+                "summary": result.get("summary")
+            }
+
+        # Create background task for AI processing (GCP mode)
         task_name = create_ai_summarization_task(note_id)
         
         return {
@@ -44,7 +58,7 @@ async def summarize_note(
         }
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error queueing task: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing AI task: {str(e)}")
 
 @router.post("/summarize/{note_id}/sync")
 async def summarize_note_sync(

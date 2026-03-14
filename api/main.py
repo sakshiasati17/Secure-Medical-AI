@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import os
 
 from api.db.database import engine, Base
 from api.routes import auth, patients, notes, ai, appointments, tasks
@@ -12,10 +13,13 @@ async def lifespan(app: FastAPI):
     # Create tables
     Base.metadata.create_all(bind=engine)
     # Ensure Cloud Tasks queue exists
-    try:
-        ensure_queue_exists()
-    except Exception as e:
-        print(f"Warning: Could not ensure Cloud Tasks queue exists: {e}")
+    if os.getenv("SKIP_CLOUD_TASKS") != "true":
+        try:
+            ensure_queue_exists()
+        except Exception as e:
+            print(f"Warning: Could not ensure Cloud Tasks queue exists: {e}")
+    else:
+        print("Skipping Cloud Tasks queue initialization (SKIP_CLOUD_TASKS=true)")
     yield
 
 app = FastAPI(
