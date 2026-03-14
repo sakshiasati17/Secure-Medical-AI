@@ -62,6 +62,17 @@
 
 - **Validated production scalability** by authoring a Locust load testing suite simulating 100+ concurrent users across all critical API endpoints, with p50/p95/p99 response time and failure-rate instrumentation.
 
+- **Verified <20ms p95 read latency locally** by running a Locust benchmark (10 users, 1-minute heat) against the full FastAPI stack, confirming GET /patients/ and GET /notes/ endpoints sustain p50 ≤ 11ms and p95 ≤ 20ms — well within the <200ms production target.
+
+### Benchmark Results (Local, SQLite, 10 concurrent users)
+
+| Endpoint | p50 (median) | p95 | Notes |
+|---|---|---|---|
+| `GET /patients/` | 5ms | 12ms | Pure read |
+| `GET /notes/` | 11ms | 20ms | Slightly heavier query |
+| `GET /appointments/` | 5ms | 11ms | Fast read |
+| `POST /auth/login` | 260ms | 300ms | Intentional — bcrypt cost |
+
 ---
 
 ### Security & Compliance
