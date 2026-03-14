@@ -1,32 +1,28 @@
+# Core API
 fastapi
-uvicorn[standard]
+uvicorn
 pydantic[email]
 email-validator
 sqlalchemy
 psycopg2-binary
-redis
 python-dotenv
-streamlit
+python-multipart
+
+# Security
+python-jose[cryptography]
+bcrypt==4.0.1
+passlib[bcrypt]
+
+# AI and RAG
 langchain>=0.3.0
 langchain-openai
 langchain-community
 openai
-python-jose[cryptography]
-bcrypt==4.0.1
-passlib[bcrypt]
-python-multipart
-alembic
 faiss-cpu
-requests
-pandas
-plotly
-reportlab
-# weasyprint  # Disabled for Vercel compatibility (requires system libraries)
-sendgrid
-twilio
-google-cloud-tasks
-pytest>=7.4.0
-pytest-cov>=4.1.0
-httpx>=0.24.0
-locust>=2.17.0
 
+# Utils
+requests
+reportlab
+
+# Note: heavy libraries like pandas, plotly, and streamlit 
+# have been removed to fit within Vercel's 500MB limit.
