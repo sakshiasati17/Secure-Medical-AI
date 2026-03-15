@@ -3,7 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
 import sys
+import logging
 from pathlib import Path
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Add the project root to sys.path to ensure 'api' package is findable on Vercel/Serverless
 root_path = Path(__file__).parent.parent.absolute()
@@ -12,15 +17,24 @@ if str(root_path) not in sys.path:
 if str(Path(__file__).parent.absolute()) not in sys.path:
     sys.path.insert(0, str(Path(__file__).parent.absolute()))
 
+logger.info(f"Python Path: {sys.path}")
+logger.info(f"Current Directory: {os.getcwd()}")
+
 try:
     from api.db.database import engine, Base
     from api.routes import auth, patients, notes, ai, appointments, tasks
     from api.services.cloud_tasks_service import ensure_queue_exists
-except ImportError:
-    # Fallback for different invocation contexts
-    from db.database import engine, Base
-    from routes import auth, patients, notes, ai, appointments, tasks
-    from services.cloud_tasks_service import ensure_queue_exists
+    logger.info("Successfully imported modules using 'api.' prefix")
+except ImportError as e:
+    logger.warning(f"Failed to import using 'api.' prefix: {e}. Trying absolute imports...")
+    try:
+        from db.database import engine, Base
+        from routes import auth, patients, notes, ai, appointments, tasks
+        from services.cloud_tasks_service import ensure_queue_exists
+        logger.info("Successfully imported modules using absolute imports")
+    except ImportError as e2:
+        logger.error(f"Critical: Failed all import attempts. E1: {e}, E2: {e2}")
+        raise e2
 
 # Create database tables
 @asynccontextmanager
