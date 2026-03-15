@@ -3,11 +3,17 @@ Google Cloud Tasks integration for background job processing.
 Replaces Celery for Cloud Run environment.
 """
 import os
-from google.cloud import tasks_v2
-from google.protobuf import timestamp_pb2
 import datetime
 from typing import Optional, Dict, Any
 import json
+
+try:
+    from google.cloud import tasks_v2
+    from google.protobuf import timestamp_pb2
+    GCP_TASKS_AVAILABLE = True
+except ImportError:
+    GCP_TASKS_AVAILABLE = False
+    print("⚠️ Google Cloud Tasks library not installed. Background tasks will be disabled.")
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "securemed-ai")
 LOCATION = os.getenv("GCP_REGION", "us-central1")
@@ -15,6 +21,8 @@ QUEUE_NAME = "mednotes-tasks"
 
 def get_tasks_client():
     """Get Cloud Tasks client."""
+    if not GCP_TASKS_AVAILABLE:
+        return None
     try:
         return tasks_v2.CloudTasksClient()
     except Exception as e:
@@ -58,7 +66,7 @@ def create_task(
     # Construct the task
     task = {
         "http_request": {
-            "http_method": tasks_v2.HttpMethod.POST,
+            "http_method": tasks_v2.HttpMethod.POST if GCP_TASKS_AVAILABLE else "POST",
             "url": url,
             "headers": {
                 "Content-Type": "application/json",
@@ -73,7 +81,7 @@ def create_task(
     }
     
     # Schedule task if time provided
-    if schedule_time:
+    if schedule_time and GCP_TASKS_AVAILABLE:
         timestamp = timestamp_pb2.Timestamp()
         timestamp.FromDatetime(schedule_time)
         task["schedule_time"] = timestamp
