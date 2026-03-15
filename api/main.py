@@ -2,16 +2,35 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
+import sys
+from pathlib import Path
 
-from api.db.database import engine, Base
-from api.routes import auth, patients, notes, ai, appointments, tasks
-from api.services.cloud_tasks_service import ensure_queue_exists
+# Add the project root to sys.path to ensure 'api' package is findable on Vercel/Serverless
+root_path = Path(__file__).parent.parent.absolute()
+if str(root_path) not in sys.path:
+    sys.path.insert(0, str(root_path))
+if str(Path(__file__).parent.absolute()) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).parent.absolute()))
+
+try:
+    from api.db.database import engine, Base
+    from api.routes import auth, patients, notes, ai, appointments, tasks
+    from api.services.cloud_tasks_service import ensure_queue_exists
+except ImportError:
+    # Fallback for different invocation contexts
+    from db.database import engine, Base
+    from routes import auth, patients, notes, ai, appointments, tasks
+    from services.cloud_tasks_service import ensure_queue_exists
 
 # Create database tables
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create tables
-    Base.metadata.create_all(bind=engine)
+    # Create tables with safety
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"Database initialization warning: {e}")
+        
     # Ensure Cloud Tasks queue exists
     if os.getenv("SKIP_CLOUD_TASKS") != "true":
         try:
